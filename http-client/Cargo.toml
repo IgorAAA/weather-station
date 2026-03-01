@@ -12,3 +12,7 @@ url = "2.5.8"
 strum_macros = "0.28"
 log = { workspace = true }
 async-trait = "0.1.89"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"]}
+wiremock = "0.6"
