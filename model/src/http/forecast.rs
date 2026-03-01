@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Forecast {
-    forecastday: Vec<ForecastDay>
+    forecastday: Vec<ForecastDay>,
 }
 
 #[derive(Deserialize, Debug)]
