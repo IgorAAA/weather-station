@@ -1,6 +1,8 @@
 use crate::config::AppConfig;
-use http_client::parse_url;
-use twelf::reexports::log::{debug, info};
+use http_client::{HttpClient, WeatherClient};
+use model::http::current::{Current, CurrentWeatherResponse};
+use std::time::Duration;
+use twelf::reexports::log::{debug, error, info};
 
 mod config;
 
@@ -13,9 +15,30 @@ async fn main() {
     debug!("App config file found: {:#?}", config);
 
     let weather_api_config = config.weather_api_config;
+    let timeout = weather_api_config.timeout;
 
-    // Preparing required url to be sent to weather api
-    let parsed_url = parse_url(weather_api_config).expect("Cannot parse url"); // Stop the app if the url is incorrect
+    let http_client = WeatherClient::new(weather_api_config).expect("Cannot build http client"); // Stop the app if http client is not build
 
-    info!("Parsed url: {:#?}", parsed_url);
+    loop {
+        let response = http_client
+            .weather_response::<CurrentWeatherResponse>()
+            .await;
+
+        match response {
+            Ok(response) => {
+                let current = response.current;
+                write_current_weather_to_influx(current).await;
+            }
+            Err(error) => {
+                error!("Error received from Weather API: {:#?}", error);
+            }
+        }
+
+        tokio::time::sleep(Duration::from_secs(timeout)).await;
+    }
+}
+
+async fn write_current_weather_to_influx(current: Current) {
+    info!("Current weather response: {:#?}", current);
+    // TODO Add influx client
 }

@@ -6,7 +6,7 @@ pub struct WeatherApiConfig {
     pub base_url: String,
     pub coords: String,
     pub weather_api_key: String,
-    pub timeout: u32,
+    pub timeout: u64,
 }
 
 impl Debug for WeatherApiConfig {

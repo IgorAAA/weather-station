@@ -10,3 +10,4 @@ serde = { workspace = true }
 tokio = { workspace = true }
 influx = { path = "../influx" }
 http-client = { path = "../http-client" }
+model = { path = "../model" }
