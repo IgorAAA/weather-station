@@ -51,3 +51,8 @@ pub struct CurrentAirQuality {
     us_epa_index: i32,
     gb_defra_index: i32,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct CurrentWeatherResponse {
+    pub current: Current,
+}
