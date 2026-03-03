@@ -11,3 +11,4 @@ tokio = { workspace = true }
 influx = { path = "../influx" }
 http-client = { path = "../http-client" }
 model = { path = "../model" }
+uuid = { version = "1.21.0", features = ["v4"] }

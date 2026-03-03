@@ -44,7 +44,11 @@ impl HttpClient for WeatherClient {
 struct UrlParser;
 
 impl UrlParser {
-    fn parse_url(&self, config: WeatherApiConfig, additional_params: Option<Vec<(&str, &str)>>) -> Result<Url> {
+    fn parse_url(
+        &self,
+        config: WeatherApiConfig,
+        additional_params: Option<Vec<(&str, &str)>>,
+    ) -> Result<Url> {
         let base_url = config.base_url;
 
         let current_uri = format!("{}/current.json", base_url);
@@ -97,4 +101,3 @@ mod tests {
         assert!(url_result.is_err());
     }
 }
-

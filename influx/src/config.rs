@@ -7,7 +7,6 @@ pub struct DbConfig {
     pub port: u16,
     pub database: String,
     pub token: String,
-    pub id: String,
 }
 
 impl Debug for DbConfig {
@@ -17,7 +16,6 @@ impl Debug for DbConfig {
             .field("port", &self.port)
             .field("database", &self.database)
             .field("token", &"************")
-            .field("client id", &self.id)
             .finish()
     }
 }

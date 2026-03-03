@@ -2,11 +2,10 @@
 weather_api_key = "${WEATHER_API_KEY}"
 base_url = "http://api.weatherapi.com/v1"
 coords = "${COORDS}"
-timeout = 10 # development value
+timeout = 10 # development, in live it should be >=60 sec
 
 [influx_db_config]
 host = "192.168.2.27"
 port = 8086
 database = "weatherapi_com"
 token = "${INFLUXDB_TOKEN}"
-id = "${INFLUX_DB_ID}"

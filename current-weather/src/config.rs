@@ -16,7 +16,6 @@ impl AppConfig {
         AppConfig::with_layers(&[
             Layer::Toml("./config/app_config.toml".into()),
             Layer::Env(Some("INFLUXDB_TOKEN".to_string())),
-            Layer::Env(Some("INFLUXDB_ID".to_string())),
             Layer::Env(Some("WEATHER_API_KEY".to_string())),
             Layer::Env(Some("COORDS".to_string())),
         ])
