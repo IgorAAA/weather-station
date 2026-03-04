@@ -3,15 +3,23 @@ use http_client::{HttpClient, WeatherClient};
 use influx::client::InfluxClient;
 use influx::model::current::{Compass16, CurrentWeather};
 use influx::{LogWriter, WeatherWriter};
+use metrics::run_metrics_server;
 use model::http::current::{Current, CurrentWeatherResponse};
 use std::time::{Duration, SystemTime};
 use twelf::reexports::log::{debug, error};
 
 mod config;
+mod metrics;
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
+
+    metrics::spawn_host_metrics_updater();
+
+    tokio::spawn(async move {
+        run_metrics_server().await;
+    });
 
     let config = AppConfig::build().expect("Cannot build config");
 

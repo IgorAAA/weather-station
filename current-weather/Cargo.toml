@@ -8,7 +8,11 @@ env_logger = { workspace = true }
 twelf = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }
+axum = { workspace = true }
+prometheus = { workspace = true }
+once_cell = { workspace = true }
 influx = { path = "../influx" }
 http-client = { path = "../http-client" }
 model = { path = "../model" }
 uuid = { version = "1.21.0", features = ["v4"] }
+sysinfo = "0.30"

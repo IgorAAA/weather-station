@@ -27,7 +27,7 @@ mod integration_tests {
 
         let body = r#"{"hello":"world","value":42}"#;
         Mock::given(method("GET"))
-            .and(path("/current.json"))
+            .and(path("/v1/current.json"))
             .and(query_param("key", "aaa"))
             .and(query_param("q", "London"))
             .respond_with(ResponseTemplate::new(200).set_body_raw(body, "application/json"))
@@ -35,7 +35,8 @@ mod integration_tests {
             .await;
 
         let config = WeatherApiConfig {
-            base_url: "http://localhost:8082".to_string(),
+            scheme: "http".to_string(),
+            host: "localhost:8082".to_string(),
             coords: "London".to_string(),
             weather_api_key: "aaa".to_string(),
             timeout: 0,
@@ -62,13 +63,14 @@ mod integration_tests {
         let server = MockServer::builder().listener(listener).start().await;
 
         Mock::given(method("GET"))
-            .and(path("/current.json"))
+            .and(path("/v1/current.json"))
             .respond_with(ResponseTemplate::new(200).set_body_string("not valid json"))
             .mount(&server)
             .await;
 
         let config = WeatherApiConfig {
-            base_url: "http://localhost:8083".to_string(),
+            scheme: "http".to_string(),
+            host: "localhost:8083".to_string(),
             coords: "".to_string(),
             weather_api_key: "".to_string(),
             timeout: 0,

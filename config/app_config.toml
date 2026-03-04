@@ -1,6 +1,7 @@
 [weather_api_config]
 weather_api_key = "${WEATHER_API_KEY}"
-base_url = "http://api.weatherapi.com/v1"
+scheme = "https"
+host = "api.weatherapi.com"
 coords = "${COORDS}"
 timeout = 10 # development, in live it should be >=60 sec
 
