@@ -4,4 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+log = { workspace = true }
+thiserror = { workspace = true }
 serde = { workspace = true }
+chrono = { workspace = true }
+influxdb = { version = "0.7", features = ["derive"] }
+strum_macros = "0.28"
