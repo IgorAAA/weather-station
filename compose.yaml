@@ -1,0 +1,44 @@
+# Comments are provided throughout this file to help you get started.
+# If you need more help, visit the Docker Compose reference guide at
+# https://docs.docker.com/go/compose-spec-reference/
+
+# Here the instructions define your application as a service called "server".
+# This service is built from the Dockerfile in the current directory.
+# You can add other services your application may depend on here, such as a
+# database or a cache. For examples, see the Awesome Compose repository:
+# https://github.com/docker/awesome-compose
+services:
+  current-weather:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BIN_NAME: current-weather
+    container_name: current-weather
+    volumes:
+      - /opt/weather-station/app_config.toml:/app/config/app_config.toml
+      - ./config:/app/config
+    ports:
+      - "3001:3001"
+    environment:
+      RUST_LOG: info
+  weather-forecast:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BIN_NAME: weather-forecast
+        FEATURE: dev
+    container_name: weather-forecast
+    volumes:
+      - ./config:/app/config
+      - ./config/app_config.toml:/app/config/app_config.toml
+    ports:
+      - "3333:3333"
+    environment:
+      INFLUXDB_TOKEN: ${INFLUXDB_TOKEN}
+      WEATHER_API_KEY: ${WEATHER_API_KEY}
+      COORDS: ${COORDS}
+      RUST_LOG: info
+
+

@@ -101,7 +101,7 @@ mod tests {
     #[tokio::test]
     async fn test_parse_url_valid() {
         let config: WeatherApiConfig = WeatherApiConfig {
-            scheme: "https".to_string(),
+            scheme: "http".to_string(),
             host: "api.weather.com".to_string(),
             coords: "New York".to_string(),
             weather_api_key: "abc123".to_string(),
@@ -111,7 +111,7 @@ mod tests {
         let url_result = UrlParser.parse_url(&config, Some(vec![("lang", "en")]));
         assert!(url_result.is_ok());
 
-        let expected_url = "https://api.weather.com/v1/current.json?key=abc123&q=New+York&lang=en";
+        let expected_url = "http://api.weather.com/v1/current.json?key=abc123&q=New+York&lang=en";
         assert_eq!(url_result.unwrap().to_string(), expected_url);
     }
 }
