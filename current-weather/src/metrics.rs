@@ -7,6 +7,8 @@ use prometheus::{Encoder, Gauge, TextEncoder, register_gauge};
 use std::sync::Mutex;
 use std::time::Duration;
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
+use tokio::sync::watch;
+use tokio::task::JoinHandle;
 
 pub static HOST_CPU_USAGE: Lazy<Gauge> = Lazy::new(|| {
     register_gauge!("host_cpu_usage_percent", "Total host CPU usage percent")
@@ -30,28 +32,31 @@ static SYS: Lazy<Mutex<System>> = Lazy::new(|| {
     Mutex::new(System::new_with_specifics(refresh))
 });
 
-pub fn spawn_host_metrics_updater() {
+pub fn spawn_host_metrics_updater(mut shutdown: watch::Receiver<bool>) -> JoinHandle<()> {
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_secs(5));
         loop {
-            interval.tick().await;
+            tokio::select! {
+                _ = interval.tick() => {
+                    let mut sys = SYS.lock().unwrap();
+                    sys.refresh_cpu();
+                    sys.refresh_memory();
 
-            let mut sys = SYS.lock().unwrap();
-            sys.refresh_cpu();
-            sys.refresh_memory();
+                    // CPU usage: sysinfo gives percent (0..100) for global CPU.
+                    let cpu = sys.global_cpu_info().cpu_usage() as f64;
+                    HOST_CPU_USAGE.set(cpu);
 
-            // CPU usage: sysinfo gives percent (0..100) for global CPU.
-            let cpu = sys.global_cpu_info().cpu_usage() as f64;
-            HOST_CPU_USAGE.set(cpu);
+                    // Memory: sysinfo returns KiB in many versions; convert to bytes.
+                    let total_bytes = (sys.total_memory() as f64) * 1024.0;
+                    let used_bytes = (sys.used_memory() as f64) * 1024.0;
 
-            // Memory: sysinfo returns KiB in many versions; convert to bytes.
-            let total_bytes = (sys.total_memory() as f64) * 1024.0;
-            let used_bytes = (sys.used_memory() as f64) * 1024.0;
-
-            HOST_MEM_TOTAL_BYTES.set(total_bytes);
-            HOST_MEM_USED_BYTES.set(used_bytes);
+                    HOST_MEM_TOTAL_BYTES.set(total_bytes);
+                    HOST_MEM_USED_BYTES.set(used_bytes);
+                }
+                _ = shutdown.changed() => return,
+            }
         }
-    });
+    })
 }
 
 pub async fn metrics_handler() -> Result<Response<Body>, (StatusCode, String)> {
@@ -76,12 +81,15 @@ pub async fn metrics_handler() -> Result<Response<Body>, (StatusCode, String)> {
     Ok(resp)
 }
 
-pub async fn run_metrics_server(bind_addr: &str) {
+pub async fn run_metrics_server(
+    bind_addr: &str,
+    mut shutdown: watch::Receiver<bool>,
+) -> std::io::Result<()> {
     let app = Router::new().route("/metrics", get(metrics_handler));
-
-    let listener = tokio::net::TcpListener::bind(bind_addr)
+    let listener = tokio::net::TcpListener::bind(bind_addr).await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(async move {
+            let _ = shutdown.changed().await;
+        })
         .await
-        .unwrap_or_else(|e| panic!("failed to bind metrics server to {bind_addr}: {e}"));
-
-    axum::serve(listener, app).await.expect("serve");
 }

@@ -6,7 +6,9 @@ use influx::{LogWriter, WeatherWriter};
 use metrics::run_metrics_server;
 use model::http::current::{Current, CurrentWeatherResponse};
 use std::time::{Duration, SystemTime};
-use tracing::{debug, error};
+use tokio::signal;
+use tokio::sync::watch;
+use tracing::{debug, error, info};
 use tracing_subscriber::EnvFilter;
 
 mod config;
@@ -22,22 +24,71 @@ async fn main() {
 
     debug!("App config file found: {:#?}", config);
 
-    metrics::spawn_host_metrics_updater();
+    let (shutdown_tx, shutdown_rx) = watch::channel(false);
+
+    let mut host_metrics_handle = metrics::spawn_host_metrics_updater(shutdown_rx.clone());
 
     let metrics_bind_addr = config.metrics_bind_addr.clone();
-    tokio::spawn(async move {
-        run_metrics_server(&metrics_bind_addr).await;
+    let metrics_shutdown_rx = shutdown_rx.clone();
+    let mut metrics_server_handle = tokio::spawn(async move {
+        run_metrics_server(&metrics_bind_addr, metrics_shutdown_rx).await
     });
 
     let weather_api_config = config.weather_api_config;
     let poll_interval_secs = weather_api_config.poll_interval_secs;
-
-    let http_client = WeatherClient::new(weather_api_config).expect("Cannot build http client"); // Stop the app if http client is not build
-
-    let influxdb_config = config.influx_db_config;
-    let influxdb_client = InfluxClient::new(influxdb_config);
+    let http_client = WeatherClient::new(weather_api_config).expect("Cannot build http client");
+    let influxdb_client = InfluxClient::new(config.influx_db_config);
     let influx_writer = WeatherWriter::LogCurrentWeather(LogWriter);
 
+    let mut poll_handle = tokio::spawn(run_poll_loop(
+        http_client,
+        influx_writer,
+        influxdb_client,
+        poll_interval_secs,
+        shutdown_rx.clone(),
+    ));
+
+    tokio::select! {
+        _ = signal::ctrl_c() => info!("SIGINT received, shutting down"),
+        _ = wait_sigterm() => info!("SIGTERM received, shutting down"),
+        res = &mut poll_handle => error!("polling task exited unexpectedly: {:?}", res),
+        res = &mut metrics_server_handle => error!("metrics server exited: {:?}", res),
+        res = &mut host_metrics_handle => error!("host metrics updater exited unexpectedly: {:?}", res),
+    }
+
+    let _ = shutdown_tx.send(true);
+
+    let _ = tokio::join!(poll_handle, metrics_server_handle, host_metrics_handle);
+
+    info!("Shutdown complete");
+}
+
+#[cfg(unix)]
+async fn wait_sigterm() {
+    use tokio::signal::unix::{SignalKind, signal};
+    match signal(SignalKind::terminate()) {
+        Ok(mut s) => {
+            let _ = s.recv().await;
+        }
+        Err(e) => {
+            error!("Failed to install SIGTERM handler: {}", e);
+            std::future::pending::<()>().await;
+        }
+    }
+}
+
+#[cfg(not(unix))]
+async fn wait_sigterm() {
+    std::future::pending::<()>().await;
+}
+
+async fn run_poll_loop(
+    http_client: WeatherClient,
+    influx_writer: WeatherWriter,
+    influxdb_client: InfluxClient,
+    poll_interval_secs: u64,
+    mut shutdown: watch::Receiver<bool>,
+) {
     loop {
         let response = http_client
             .weather_response::<CurrentWeatherResponse>()
@@ -60,7 +111,13 @@ async fn main() {
             }
         };
 
-        tokio::time::sleep(Duration::from_secs(poll_interval_secs)).await;
+        tokio::select! {
+            _ = tokio::time::sleep(Duration::from_secs(poll_interval_secs)) => {}
+            _ = shutdown.changed() => {
+                info!("Polling loop shutting down");
+                return;
+            }
+        }
     }
 }
 
