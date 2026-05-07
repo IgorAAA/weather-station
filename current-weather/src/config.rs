@@ -9,6 +9,7 @@ use twelf::{Error, Layer, config};
 pub struct AppConfig {
     pub influx_db_config: DbConfig,
     pub weather_api_config: WeatherApiConfig,
+    pub metrics_bind_addr: String,
 }
 
 impl AppConfig {

@@ -18,15 +18,16 @@ async fn main() {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
-    metrics::spawn_host_metrics_updater();
-
-    tokio::spawn(async move {
-        run_metrics_server().await;
-    });
-
     let config = AppConfig::build().expect("Cannot build config");
 
     debug!("App config file found: {:#?}", config);
+
+    metrics::spawn_host_metrics_updater();
+
+    let metrics_bind_addr = config.metrics_bind_addr.clone();
+    tokio::spawn(async move {
+        run_metrics_server(&metrics_bind_addr).await;
+    });
 
     let weather_api_config = config.weather_api_config;
     let poll_interval_secs = weather_api_config.poll_interval_secs;

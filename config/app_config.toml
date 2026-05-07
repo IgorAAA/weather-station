@@ -1,3 +1,5 @@
+metrics_bind_addr = "0.0.0.0:3001"
+
 [weather_api_config]
 weather_api_key = "${WEATHER_API_KEY}"
 scheme = "http"

@@ -76,12 +76,12 @@ pub async fn metrics_handler() -> Result<Response<Body>, (StatusCode, String)> {
     Ok(resp)
 }
 
-pub async fn run_metrics_server() {
+pub async fn run_metrics_server(bind_addr: &str) {
     let app = Router::new().route("/metrics", get(metrics_handler));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001")
+    let listener = tokio::net::TcpListener::bind(bind_addr)
         .await
-        .expect("bind");
+        .unwrap_or_else(|e| panic!("failed to bind metrics server to {bind_addr}: {e}"));
 
     axum::serve(listener, app).await.expect("serve");
 }
