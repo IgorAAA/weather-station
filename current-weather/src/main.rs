@@ -6,14 +6,17 @@ use influx::{LogWriter, WeatherWriter};
 use metrics::run_metrics_server;
 use model::http::current::{Current, CurrentWeatherResponse};
 use std::time::{Duration, SystemTime};
-use twelf::reexports::log::{debug, error};
+use tracing::{debug, error};
+use tracing_subscriber::EnvFilter;
 
 mod config;
 mod metrics;
 
 #[tokio::main]
 async fn main() {
-    env_logger::init();
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
 
     metrics::spawn_host_metrics_updater();
 
