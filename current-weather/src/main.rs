@@ -1,8 +1,8 @@
-use crate::config::AppConfig;
+use crate::config::{AppConfig, WriterKind};
 use http_client::{HttpClient, WeatherClient};
 use influx::client::InfluxClient;
 use influx::model::current::{Compass16, CurrentWeather};
-use influx::{LogWriter, WeatherWriter};
+use influx::{InfluxWriter, LogWriter, WeatherWriter};
 use metrics::run_metrics_server;
 use model::http::current::{Current, CurrentWeatherResponse};
 use std::time::{Duration, SystemTime};
@@ -38,7 +38,10 @@ async fn main() {
     let poll_interval_secs = weather_api_config.poll_interval_secs;
     let http_client = WeatherClient::new(weather_api_config).expect("Cannot build http client");
     let influxdb_client = InfluxClient::new(config.influx_db_config);
-    let influx_writer = WeatherWriter::LogCurrentWeather(LogWriter);
+    let influx_writer = match config.writer {
+        WriterKind::Influx => WeatherWriter::InfluxCurrentWeather(InfluxWriter),
+        WriterKind::Log => WeatherWriter::LogCurrentWeather(LogWriter),
+    };
 
     let mut poll_handle = tokio::spawn(run_poll_loop(
         http_client,
