@@ -105,7 +105,7 @@ mod tests {
             host: "api.weather.com".to_string(),
             coords: "New York".to_string(),
             weather_api_key: "abc123".to_string(),
-            timeout: 0,
+            poll_interval_secs: 0,
         };
 
         let url_result = UrlParser.parse_url(&config, Some(vec![("lang", "en")]));

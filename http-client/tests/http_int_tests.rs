@@ -39,7 +39,7 @@ mod integration_tests {
             host: "localhost:8082".to_string(),
             coords: "London".to_string(),
             weather_api_key: "aaa".to_string(),
-            timeout: 0,
+            poll_interval_secs: 0,
         };
 
         let client = WeatherClient::new(config).unwrap();
@@ -73,7 +73,7 @@ mod integration_tests {
             host: "localhost:8083".to_string(),
             coords: "".to_string(),
             weather_api_key: "".to_string(),
-            timeout: 0,
+            poll_interval_secs: 0,
         };
 
         let client = WeatherClient::new(config).unwrap();

@@ -7,7 +7,7 @@ pub struct WeatherApiConfig {
     pub scheme: String,
     pub coords: String,
     pub weather_api_key: String,
-    pub timeout: u64,
+    pub poll_interval_secs: u64,
 }
 
 impl Debug for WeatherApiConfig {
@@ -17,7 +17,7 @@ impl Debug for WeatherApiConfig {
             .field("host", &self.host)
             .field("coords", &self.coords)
             .field("weather_api_key", &"*************")
-            .field("timeout", &self.timeout)
+            .field("poll_interval_secs", &self.poll_interval_secs)
             .finish()
     }
 }

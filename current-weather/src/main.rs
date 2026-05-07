@@ -29,7 +29,7 @@ async fn main() {
     debug!("App config file found: {:#?}", config);
 
     let weather_api_config = config.weather_api_config;
-    let timeout = weather_api_config.timeout;
+    let poll_interval_secs = weather_api_config.poll_interval_secs;
 
     let http_client = WeatherClient::new(weather_api_config).expect("Cannot build http client"); // Stop the app if http client is not build
 
@@ -59,7 +59,7 @@ async fn main() {
             }
         };
 
-        tokio::time::sleep(Duration::from_secs(timeout)).await;
+        tokio::time::sleep(Duration::from_secs(poll_interval_secs)).await;
     }
 }
 

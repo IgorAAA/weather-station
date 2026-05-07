@@ -8,7 +8,9 @@ pub mod error;
 pub mod model;
 
 pub enum WeatherWriter {
+    // Real writer to influxdb
     InfluxCurrentWeather(InfluxWriter),
+    // Log writer -- for demo, etc.
     LogCurrentWeather(LogWriter),
 }
 
